@@ -1,0 +1,73 @@
+generated: '2026-08-04'
+method: searched
+source: https://gunbygunz.com/documentation/
+summary: >-
+  Gunzilla runs production chain infrastructure with essentially no published API lifecycle posture:
+  no status page, no deprecation policy, no SLA, no changelog for either the RPC or the explorer, and
+  no versioning statement of its own. What versioning exists is inherited from the upstream projects
+  (Ethereum JSON-RPC, Avalanche Subnet-EVM, Blockscout).
+versioning:
+  scheme: uri-path (explorer) / upstream-client (chain)
+  current:
+    gunzscan_rest: v2
+    gunzscan_graphql: v1
+    gunzscan_legacy: unversioned (?module=&action=)
+    chain_client: v1.14.2
+  chain_client_probe: 'POST web3_clientVersion -> {"result":"v1.14.2"}'
+  docs: https://gunbygunz.com/documentation/
+  note: >-
+    The chain method surface is the Ethereum JSON-RPC contract plus Avalanche Subnet-EVM extensions;
+    it is versioned upstream at https://docs.avax.network/api-reference/subnet-evm-api, not by
+    Gunzilla.
+deprecation:
+  policy_url: null
+  sunset_header: false
+  deprecation_header: false
+  note: >-
+    No deprecation policy is published. The Etherscan-compatible /api?module=&action= surface is
+    described in Blockscout's own Swagger UI as a transitional compatibility layer ("provided for
+    developers transitioning their applications from Etherscan to BlockScout") but Gunzilla makes no
+    statement about how long it will serve it.
+sla:
+  url: null
+  uptime_target: null
+  note: >-
+    No SLA. The documentation instead makes an availability-adjacent commitment about finality -
+    "waiting for 2-3 blocks to consider a transaction confirmed and irreversible is entirely
+    sufficient" - with block times of ~1-2 seconds.
+status_page: null
+status_page_probes:
+- url: https://status.gunbygunz.com
+  result: NXDOMAIN
+- url: https://status.gunz.gg
+  result: NXDOMAIN
+- url: https://status.gunzscan.io
+  result: NXDOMAIN
+- url: https://gunbygunz.com/status/
+  result: 404
+- url: https://gunzilla.statuspage.io
+  result: 200 but redirects to the Atlassian Statuspage marketing site - not a Gunzilla status page
+changelog:
+  url: null
+  note: >-
+    No dated API or chain changelog. The closest published surface is the press centre
+    (https://gunbygunz.com/press-center/...) and the Off The Grid game blog
+    (https://gameoffthegrid.com/blog/), both of which are marketing/release communications rather
+    than an API change log.
+network_history:
+- event: GUNZ testnet
+  chain_id: 49321
+  status: live
+  evidence: 'POST eth_chainId https://subnets.avax.network/gunzilla/testnet/rpc -> 0xc0a9 (49321)'
+- event: GUNZ L1 mainnet
+  chain_id: 43419
+  status: live
+  evidence: 'POST eth_chainId https://rpc.gunzchain.io/ext/bc/2M47.../rpc -> 0xa99b (43419)'
+- event: cross-chain expansion
+  detail: bridging to Avalanche C-Chain and Solana; LayerZero-tracked
+  reference: https://layerzeroscan.com/analytics/networks?dstChain=gunz
+deprecated_operations: []
+gaps:
+- No status page anywhere in the estate, for a chain whose consumers are game clients and exchanges.
+- No deprecation policy and no Sunset/Deprecation header support on any HTTP surface.
+- No changelog for the RPC node, the explorer, or the gated marketplace API.

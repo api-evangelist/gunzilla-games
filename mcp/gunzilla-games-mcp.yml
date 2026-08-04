@@ -1,0 +1,121 @@
+generated: '2026-08-04'
+method: derived
+status: candidate
+source: graphql/gunzilla-games-gunzscan.graphql + probed GUNZScan REST v2 endpoints + probed GUNZ
+  JSON-RPC methods
+summary: >-
+  Gunzilla operates no MCP server. A search of the GUNZ and Gunzilla developer surfaces, npm, the MCP
+  registries and the public web found nothing, and no /mcp endpoint answers on any Gunzilla host
+  (POST https://gunzscan.io/mcp -> 404). This file is a DERIVED CANDIDATE tool set - the agent-facing
+  shape the existing anonymous read surfaces would take if wrapped. Every tool below is bound to an
+  operation that was verified live on 2026-08-04; nothing here is a Gunzilla product.
+server:
+  name: gunz
+  published: false
+  transport: null
+  url: null
+search_evidence:
+- probe: POST https://gunzscan.io/mcp {"method":"tools/list"}
+  result: 404
+- probe: web search for a GUNZ / Gunzilla MCP server
+  result: none found
+- probe: no GitHub organization exists (gunzilla, gunzillagames, gunzchain all 404)
+surfaces:
+  json_rpc: https://rpc.gunzchain.io/ext/bc/2M47TxWHGnhNtq6pM5zPXdATBtuqubxn5EPFgFmEawCQr9WFML/rpc
+  graphql: https://gunzscan.io/api/v1/graphql
+  rest_v2: https://gunzscan.io/api/v2
+  auth: none required for any of the above
+tools:
+- name: gunz_get_chain_id
+  description: Return the GUNZ chain ID (43419) to confirm which network a client is bound to.
+  binding: json-rpc
+  source_operation: eth_chainId
+  verified: true
+- name: gunz_get_block_number
+  description: Return the latest GUNZ block height.
+  binding: json-rpc
+  source_operation: eth_blockNumber
+  verified: true
+- name: gunz_get_client_version
+  description: Return the Subnet-EVM client version serving the public node.
+  binding: json-rpc
+  source_operation: web3_clientVersion
+  verified: true
+- name: gunz_get_balance
+  description: Return the GUN balance of an address at a given block.
+  binding: json-rpc
+  source_operation: eth_getBalance
+  input_schema_source: Ethereum JSON-RPC (address, block tag)
+- name: gunz_get_transaction
+  description: Fetch a transaction by hash.
+  binding: json-rpc
+  source_operation: eth_getTransactionByHash
+  also_available_as: graphql/gunzilla-games-gunzscan.graphql#RootQueryType.transaction
+- name: gunz_get_logs
+  description: Scan a block range for contract logs - the deposit-tracking pattern Gunzilla documents.
+  binding: json-rpc
+  source_operation: eth_getLogs
+- name: gunz_send_raw_transaction
+  description: Broadcast a pre-signed raw transaction. Idempotent by EVM nonce; see
+    conventions/gunzilla-games-conventions.yml.
+  binding: json-rpc
+  source_operation: eth_sendRawTransaction
+  write: true
+  consequence: physical
+  note: >-
+    Value-moving. Any wrapper must require an explicit human-approved signed payload; the server must
+    never hold a signing key.
+- name: gunzscan_get_address
+  description: Fetch an address profile - balance, nonce, transaction and token-transfer counts,
+    contract code.
+  binding: graphql
+  source_operation: RootQueryType.address(hash)
+  verified: true
+- name: gunzscan_get_addresses
+  description: Batch-fetch several address profiles.
+  binding: graphql
+  source_operation: RootQueryType.addresses(hashes)
+  verified: true
+- name: gunzscan_get_block
+  description: Fetch a block by height with gas, miner, timestamp and parent hash.
+  binding: graphql
+  source_operation: RootQueryType.block(number)
+  verified: true
+- name: gunzscan_list_token_transfers
+  description: Page the transfers of one token contract (Relay cursor connection).
+  binding: graphql
+  source_operation: RootQueryType.tokenTransfers(tokenContractAddressHash, first, after)
+  verified: true
+- name: gunzscan_list_address_token_transfer_txs
+  description: Page the token-transfer transactions touching one address.
+  binding: graphql
+  source_operation: RootQueryType.tokenTransferTxs(addressHash, first, after)
+  verified: true
+- name: gunzscan_get_stats
+  description: Chain-level stats - average block time, gas prices, GUN price, market cap, network
+    utilization.
+  binding: rest
+  source_operation: GET /api/v2/stats
+  verified: true
+- name: gunzscan_list_blocks
+  description: Page recent blocks with next_page_params cursors.
+  binding: rest
+  source_operation: GET /api/v2/blocks
+  verified: true
+- name: gunzscan_get_transaction_rest
+  description: Fetch a transaction by hash from the REST v2 surface.
+  binding: rest
+  source_operation: GET /api/v2/transactions/{hash}
+  verified: true
+- name: gunzscan_subscribe_token_transfers
+  description: Stream token transfers as they are indexed (GraphQL subscription over the Phoenix
+    WebSocket).
+  binding: websocket
+  source_operation: RootSubscriptionType.tokenTransfers
+  source: asyncapi/gunzilla-games-gunzscan-events.yml
+notes:
+- No tool crosswalk artifact is emitted - a crosswalk binds MCP tools to OpenAPI operationIds and
+  Gunzilla publishes no OpenAPI. The bindings above point at GraphQL field names, REST paths and
+  JSON-RPC method names instead.
+- Rate limits differ per surface (REST 3000, GraphQL 500); a wrapper should budget separately. See
+  rate-limits/gunzilla-games-rate-limits.yml.

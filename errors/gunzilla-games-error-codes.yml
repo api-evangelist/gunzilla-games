@@ -1,0 +1,149 @@
+generated: '2026-08-04'
+method: probed
+source: live error responses observed against the GUNZ RPC node and GUNZScan on 2026-08-04
+format: mixed - JSON-RPC 2.0 error objects on the chain node; three different envelopes on GUNZScan
+rfc9457: false
+summary: >-
+  Gunzilla publishes no error reference. Everything below was observed by deliberately provoking
+  errors against the public endpoints, or is a standard code the surfaces inherit (JSON-RPC 2.0 and
+  Ethereum's de-facto RPC error codes). The chain node speaks canonical JSON-RPC 2.0 errors; the
+  explorer speaks three different envelopes depending on which of its three APIs is called, which is
+  the single biggest ergonomics trap on this provider for an agent that treats gunzscan.io as one API.
+
+envelopes:
+- id: jsonrpc
+  surface: GUNZ Chain JSON-RPC API
+  http_status: 200
+  shape: '{jsonrpc, id, error: {code, message, data?}}'
+  note: HTTP status stays 200; the error lives in the body.
+- id: blockscout-v2-validation
+  surface: GUNZScan REST v2
+  http_status: 422
+  shape: '{errors: [{title, source: {pointer}, detail}]}'
+- id: blockscout-v2-notfound
+  surface: GUNZScan REST v2
+  http_status: 404
+  shape: '{message}'
+- id: etherscan-compat
+  surface: GUNZScan /api?module=&action=
+  http_status: 200
+  shape: '{status, message, result}'
+  note: 'status "0" means failure; HTTP 200 is returned for failures too.'
+- id: graphql
+  surface: GUNZScan GraphQL
+  http_status: 200
+  shape: '{errors: [{message, locations}]}'
+
+errors:
+- code: -32700
+  name: Parse error
+  envelope: jsonrpc
+  meaning: Invalid JSON was received by the node.
+  remediation: Fix the request body encoding.
+  observed: false
+  source: JSON-RPC 2.0 specification (inherited)
+- code: -32600
+  name: Invalid Request
+  envelope: jsonrpc
+  meaning: The JSON sent is not a valid JSON-RPC request object.
+  remediation: Include jsonrpc, id, method and params.
+  observed: false
+  source: JSON-RPC 2.0 specification (inherited)
+- code: -32601
+  name: Method not found
+  envelope: jsonrpc
+  meaning: The requested method is not exposed by this node.
+  remediation: Check the method against the Subnet-EVM / Ethereum JSON-RPC surface. Some
+    debug_/admin_ namespaces are disabled on the public node.
+  observed: true
+  observed_message: the method eth_bogusMethod does not exist/is not available
+  example_request: '{"jsonrpc":"2.0","id":1,"method":"eth_bogusMethod","params":[]}'
+- code: -32602
+  name: Invalid params
+  envelope: jsonrpc
+  meaning: Wrong argument count or malformed argument (bad hex, bad address, bad block tag).
+  remediation: 0x-prefix all hashes and quantities; addresses must be 20 bytes.
+  observed: false
+  source: JSON-RPC 2.0 specification (inherited)
+- code: -32603
+  name: Internal error
+  envelope: jsonrpc
+  meaning: Internal node error.
+  remediation: Retry with backoff; if persistent, contact the Gunzilla team.
+  observed: false
+- code: -32000
+  name: Server error (execution / transaction rejected)
+  envelope: jsonrpc
+  meaning: >-
+    The catch-all server error class used by EVM nodes for transaction rejection - the GUNZ
+    documentation names the three that matter on this chain: insufficient balance, a nonce lower than
+    the account's current nonce, and a gas price below the network minimum. Contract deployment from
+    an unapproved address also lands here, because GUNZ is a permissioned chain.
+  remediation: >-
+    Re-read the account nonce with eth_getTransactionCount(latest/pending), re-quote gas with
+    eth_gasPrice or eth_maxPriorityFeePerGas, check the GUN balance, and confirm the sender is
+    approved for deployment.
+  observed: false
+  source: https://gunbygunz.com/documentation/
+- code: null
+  name: Invalid value
+  envelope: blockscout-v2-validation
+  http_status: 422
+  meaning: A path or query parameter failed format validation.
+  remediation: Match the regex the response returns in detail.
+  observed: true
+  observed_body: '{"errors":[{"title":"Invalid value","source":{"pointer":"/address_hash_param"},"detail":"Invalid
+    format. Expected ~r/^0x([A-Fa-f0-9]{40})$/"}]}'
+  example_request: GET https://gunzscan.io/api/v2/addresses/0xNOTANADDRESS
+- code: null
+  name: Not found
+  envelope: blockscout-v2-notfound
+  http_status: 404
+  meaning: The block, transaction, address or token does not exist on this chain.
+  remediation: Confirm you are querying GUNZ (chain 43419) and not another EVM chain.
+  observed: true
+  observed_body: '{"message":"Not found"}'
+  example_request: GET https://gunzscan.io/api/v2/transactions/0x0000...0001
+- code: '0'
+  name: Etherscan-compatible failure status
+  envelope: etherscan-compat
+  http_status: 200
+  meaning: >-
+    The legacy module/action API signals failure in the body only. status "0" plus a human message;
+    result is null.
+  remediation: Never branch on HTTP status for this surface - always read status.
+  observed: true
+  observed_body: '{"message":"Invalid address hash","result":null,"status":"0"}'
+  example_request: GET https://gunzscan.io/api?module=account&action=balance&address=0xbad
+- code: null
+  name: Query too complex
+  envelope: graphql
+  http_status: 200
+  meaning: >-
+    The GraphQL endpoint enforces a query-complexity ceiling of 100. This is why the standard
+    single-shot GraphQL IntrospectionQuery fails against GUNZScan.
+  remediation: >-
+    Split the query. Introspect one type at a time with __type(name:"X"); page connections with
+    small first/last values.
+  observed: true
+  observed_body: '{"errors":[{"message":"Field __schema is too complex: complexity is 181 and maximum
+    is 100","locations":[{"line":1,"column":26}]}]}'
+- code: 429
+  name: Rate limited
+  envelope: blockscout-v2-notfound
+  http_status: 429
+  meaning: The GUNZScan per-client quota was exhausted.
+  remediation: >-
+    Read x-ratelimit-remaining and x-ratelimit-reset and back off. See
+    rate-limits/gunzilla-games-rate-limits.yml.
+  observed: false
+  note: not provoked during the probe - the quota was not exhausted.
+- code: 403
+  name: Cloudflare bot challenge
+  envelope: null
+  http_status: 403
+  meaning: >-
+    api.gunztoken.io and marketplace.gunztoken.io return a Cloudflare interstitial for every path
+    except /.well-known/*. This is edge protection, not an application error.
+  remediation: There is no public path past this; access is granted out of band by Gunzilla.
+  observed: true

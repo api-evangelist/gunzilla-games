@@ -1,0 +1,62 @@
+generated: '2026-08-04'
+method: probed
+source: response headers observed on https://gunzscan.io on 2026-08-04
+summary: >-
+  Gunzilla publishes no rate-limit documentation. GUNZScan does signal quota in response headers on
+  both its REST v2 and GraphQL surfaces, so the limits below were read off the wire rather than off
+  a docs page. The GUNZ chain RPC node returns no rate-limit headers at all; the documentation only
+  implies limits exist by offering IP allow-listing to remove them.
+rate_limits:
+- api: GUNZScan Explorer API
+  surface: REST v2 (/api/v2/*)
+  limit_count: 3000
+  window: rolling (server-reported reset in milliseconds)
+  scope: per client IP
+  signaled: true
+  headers:
+    limit: x-ratelimit-limit
+    remaining: x-ratelimit-remaining
+    reset: x-ratelimit-reset
+  observed:
+    x-ratelimit-limit: '3000'
+    x-ratelimit-remaining: '2935'
+    x-ratelimit-reset: '41304'
+  evidence: GET https://gunzscan.io/api/v2/stats
+- api: GUNZScan Explorer API
+  surface: GraphQL (/api/v1/graphql)
+  limit_count: 500
+  window: rolling (server-reported reset in milliseconds)
+  scope: per client IP
+  signaled: true
+  headers:
+    limit: x-ratelimit-limit
+    remaining: x-ratelimit-remaining
+    reset: x-ratelimit-reset
+  observed:
+    x-ratelimit-limit: '500'
+    x-ratelimit-remaining: '481'
+    x-ratelimit-reset: '2730274'
+  additional_control:
+    kind: query-complexity
+    max_complexity: 100
+    note: enforced per operation, independent of the request quota
+  evidence: POST https://gunzscan.io/api/v1/graphql
+- api: GUNZ Chain JSON-RPC API
+  surface: https://rpc.gunzchain.io/ext/bc/.../rpc
+  limit_count: null
+  signaled: false
+  scope: per client IP (inferred)
+  note: >-
+    No x-ratelimit-* headers are returned. Gunzilla's documentation confirms limits exist and offers
+    to remove them for partners.
+  quote: >-
+    "If you intend to utilize our RPC endpoint, please provide the IP addresses of your services so
+    that we can whitelist them. This will eliminate potential limit hits."
+  source: https://gunbygunz.com/documentation/
+  exemption_channel: contact the Gunzilla team to have service IPs allow-listed
+gaps:
+- No published rate-limit page, no documented numbers, no documented 429 behaviour, no Retry-After
+  header observed on any surface.
+- The two GUNZScan surfaces carry different quotas (3000 REST vs 500 GraphQL) with no documentation
+  saying so - a client that budgets from the REST number will be throttled six times sooner on
+  GraphQL.

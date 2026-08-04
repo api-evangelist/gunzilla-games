@@ -1,0 +1,4 @@
+Contact: mailto:security@gunzillagames.com
+Expires: 2050-01-01T10:15:00Z
+Hiring: https://gunzillagames.com/en/careers/
+Preferred-Languages: en

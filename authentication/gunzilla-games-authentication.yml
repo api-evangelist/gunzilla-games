@@ -1,0 +1,83 @@
+generated: '2026-08-04'
+method: searched
+source: https://gunbygunz.com/documentation/
+docs: https://gunbygunz.com/documentation/
+summary:
+  types:
+  - none
+  - network-allowlist
+  - wallet-signature
+  api_key_in: []
+  oauth2_flows: []
+  note: >-
+    Gunzilla publishes no API keys, no OAuth, and no token endpoint on its public surfaces. Every
+    public read surface answers anonymously. Write access is authenticated cryptographically at the
+    protocol layer (an ECDSA secp256k1 signature over the transaction by the sending EVM account),
+    not by an API credential. Privileged access - contract deployment, validator participation, and
+    the gunztoken.io marketplace/minting API - is granted out of band by the Gunzilla team.
+schemes:
+- name: anonymous-read
+  type: none
+  applies_to:
+  - GUNZ Chain JSON-RPC API
+  - GUNZScan Explorer API
+  description: >-
+    Read methods on the public GUNZ RPC node and every GUNZScan surface (REST v2, the
+    Etherscan-compatible module/action API, and GraphQL) are served without any credential. Verified
+    by anonymous HTTP requests returning 200 with real data.
+  evidence:
+  - 'POST https://rpc.gunzchain.io/ext/bc/2M47.../rpc {"method":"eth_chainId"} -> 200 {"result":"0xa99b"}'
+  - GET https://gunzscan.io/api/v2/stats -> 200 application/json
+  - POST https://gunzscan.io/api/v1/graphql introspection -> 200
+- name: network-allowlist
+  type: ip-allowlist
+  applies_to:
+  - GUNZ Chain JSON-RPC API
+  description: >-
+    Gunzilla offers IP allow-listing on the public RPC endpoint for partners. This is an
+    availability/rate-limit control obtained by contacting the team, not a per-request credential.
+  quote: >-
+    "If you intend to utilize our RPC endpoint, please provide the IP addresses of your services so
+    that we can whitelist them. This will eliminate potential limit hits."
+  request_channel: Contact the Gunzilla team via https://gunbygunz.com/develop/
+- name: transaction-signature
+  type: wallet-signature
+  algorithm: ECDSA secp256k1 (Ethereum / EIP-155 replay-protected)
+  applies_to:
+  - GUNZ Chain JSON-RPC API
+  description: >-
+    Writes are submitted as pre-signed raw transactions via eth_sendRawTransaction. The signing key
+    is the caller's own EVM private key; the chain authenticates the recovered sender address. Chain
+    ID 43419 is bound into the signature by EIP-155, so a GUNZ transaction cannot be replayed on
+    another EVM chain.
+  tooling: web3.js, ethers.js and standard Ethereum libraries, per the GUNZ documentation.
+- name: deployment-permission
+  type: out-of-band-authorization
+  applies_to:
+  - GUNZ Chain JSON-RPC API
+  description: >-
+    GUNZ is a permissioned L1. A signed and otherwise valid contract-deployment transaction is
+    rejected unless the sending address has been approved by Gunzilla. Validator participation is
+    likewise restricted to approved partners and Ava Labs nodes.
+  quote: >-
+    "our subnet is permissioned, meaning that you cannot deploy smart contracts without your
+    addresses' approval. If you wish to deploy your code, we will need a description of its purpose."
+- name: gunztoken-api-gate
+  type: unknown
+  applies_to:
+  - api.gunztoken.io
+  - marketplace.gunztoken.io
+  status: gated
+  description: >-
+    api.gunztoken.io and marketplace.gunztoken.io answer HTTP 403 behind a Cloudflare bot challenge
+    on every path except /.well-known/*, where the backend leaks a FastAPI-shaped
+    {"detail":"Not Found"} body. No authentication scheme could be observed anonymously and none is
+    documented publicly. Recorded as gated, not as absent.
+  evidence:
+  - GET https://api.gunztoken.io/openapi.json -> 403 (Cloudflare "Just a moment...")
+  - GET https://api.gunztoken.io/llms.txt -> 404 application/json {"detail":"Not Found"}
+gaps:
+- No developer signup, no API key issuance, no OAuth 2.0 or OpenID Connect anywhere on the public
+  surface.
+- The minting-engine and marketplace APIs advertised on https://gunbygunz.com/develop/ have no
+  public authentication documentation; access is by application form only.

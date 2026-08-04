@@ -1,0 +1,270 @@
+generated: '2026-08-04'
+method: derived
+source: graphql/gunzilla-games-gunzscan.graphql
+source_probe: https://gunzscan.io/api/v1/graphql (anonymous introspection)
+summary: >-
+  The GUNZ public data model is the canonical EVM ledger graph as projected by the GUNZScan
+  (Blockscout) GraphQL schema. Seven entities carry real data on this chain - Address, Block,
+  Transaction, InternalTransaction, Token, TokenTransfer and SmartContract. Two more (CeloTransfer,
+  TransferTransaction) are present in the schema because Blockscout ships a Celo variant; they are
+  upstream artefacts, not GUNZ concepts, and are marked inactive here.
+identifiers:
+  address: 0x + 40 hex characters (20-byte EVM address, keccak-256 of the public key, last 20 bytes)
+  transaction_hash: 0x + 64 hex characters (FullHash)
+  block: integer height, or FullHash
+  token: identified by its contract address (contractAddressHash)
+  note: >-
+    "The GUNZ chain only supports address formats in Hexadecimal/EVM addresses. The same applies to
+    memos; they are neither needed nor supported." - https://gunbygunz.com/documentation/
+scalars:
+- name: AddressHash
+  meaning: 20-byte EVM address
+- name: FullHash
+  meaning: 32-byte hash (block or transaction)
+- name: NonceHash
+  meaning: account/block nonce
+- name: Wei
+  meaning: integer value in the smallest unit of GUN (18 decimals)
+- name: Decimal
+  meaning: arbitrary-precision decimal, serialised as a string
+- name: Data
+  meaning: 0x-prefixed byte string (bytecode, call input/output)
+- name: Json
+  meaning: embedded JSON (ABI, compiler settings, trace address)
+entities:
+- name: Address
+  role: an account or contract on GUNZ
+  key: hash
+  fields:
+  - hash
+  - nonce
+  - fetchedCoinBalance
+  - fetchedCoinBalanceBlockNumber
+  - gasUsed
+  - contractCode
+  - transactionsCount
+  - tokenTransfersCount
+  notes: contractCode is non-null only for contract accounts.
+- name: Block
+  role: a container of transactions, parented to the previous block
+  key: number (also hash)
+  fields:
+  - number
+  - hash
+  - parentHash
+  - timestamp
+  - minerHash
+  - nonce
+  - size
+  - gasLimit
+  - gasUsed
+  - baseFeePerGas
+  - difficulty
+  - totalDifficulty
+  - consensus
+  - isEmpty
+- name: Transaction
+  role: a signed state transition submitted by an account
+  key: hash
+  implements: Node
+  fields:
+  - hash
+  - blockNumber
+  - blockHash
+  - index
+  - nonce
+  - fromAddressHash
+  - toAddressHash
+  - value
+  - gas
+  - gasPrice
+  - gasUsed
+  - cumulativeGasUsed
+  - maxFeePerGas
+  - maxPriorityFeePerGas
+  - input
+  - status
+  - error
+  - revertReason
+  - hasErrorInInternalTransactions
+  - createdContractAddressHash
+  - type
+  - v
+  - r
+  - s
+  - earliestProcessingStart
+  enums:
+    status: [OK, ERROR]
+- name: InternalTransaction
+  role: a message call produced during transaction execution (EVM trace frame)
+  key: id
+  implements: Node
+  fields:
+  - transactionHash
+  - transactionIndex
+  - blockNumber
+  - blockHash
+  - blockIndex
+  - index
+  - callType
+  - type
+  - fromAddressHash
+  - toAddressHash
+  - value
+  - gas
+  - gasUsed
+  - input
+  - output
+  - init
+  - error
+  - traceAddress
+  - createdContractAddressHash
+  - createdContractCode
+  enums:
+    callType: [CALL, CALLCODE, DELEGATECALL, STATICCALL]
+    type: [CALL, CREATE, REWARD, SELFDESTRUCT]
+- name: Token
+  role: a token contract indexed on GUNZ (ERC-721 is the standard Gunzilla states it uses; ERC-20
+    shapes are also indexable)
+  key: contractAddressHash
+  fields:
+  - contractAddressHash
+  - name
+  - symbol
+  - decimals
+  - type
+  - totalSupply
+  - holderCount
+  - circulatingMarketCap
+  - volume24h
+  - iconUrl
+- name: TokenTransfer
+  role: a single token movement emitted by a transaction
+  key: id
+  implements: Node
+  fields:
+  - transactionHash
+  - blockNumber
+  - logIndex
+  - fromAddressHash
+  - toAddressHash
+  - tokenContractAddressHash
+  - amount
+  - amounts
+  - tokenIds
+  notes: tokenIds/amounts are arrays to carry ERC-721 and ERC-1155 batch semantics.
+- name: SmartContract
+  role: verified source metadata for a contract address
+  key: addressHash
+  fields:
+  - addressHash
+  - name
+  - language
+  - compilerVersion
+  - compilerSettings
+  - evmVersion
+  - optimization
+  - optimizationRuns
+  - abi
+  - contractSourceCode
+  - constructorArguments
+  - externalLibraries
+  - filePath
+  - isChangedBytecode
+  - partiallyVerified
+  - verifiedViaSourcify
+  - verifiedViaEthBytecodeDb
+- name: CeloTransfer
+  role: upstream Blockscout Celo type
+  active: false
+  notes: present in the schema but not a GUNZ concept.
+- name: TransferTransaction
+  role: upstream Blockscout Celo type
+  active: false
+relationships:
+- from: Address
+  to: Transaction
+  kind: has_many
+  via: transactions (Relay connection, ordered by SortOrder, default DESC)
+- from: Address
+  to: TokenTransfer
+  kind: has_many
+  via: tokenTransfers (Relay connection)
+- from: Address
+  to: SmartContract
+  kind: has_one
+  via: smartContract
+- from: Transaction
+  to: Block
+  kind: belongs_to
+  via: block / blockHash / blockNumber
+- from: Transaction
+  to: InternalTransaction
+  kind: has_many
+  via: internalTransactions (Relay connection)
+- from: Transaction
+  to: Address
+  kind: belongs_to
+  via: fromAddressHash
+- from: Transaction
+  to: Address
+  kind: belongs_to
+  via: toAddressHash
+- from: Transaction
+  to: Address
+  kind: has_one
+  via: createdContractAddressHash (contract creation)
+- from: TokenTransfer
+  to: Transaction
+  kind: belongs_to
+  via: transaction / transactionHash
+- from: TokenTransfer
+  to: Token
+  kind: belongs_to
+  via: token / tokenContractAddressHash
+- from: TokenTransfer
+  to: Address
+  kind: belongs_to
+  via: fromAddressHash
+- from: TokenTransfer
+  to: Address
+  kind: belongs_to
+  via: toAddressHash
+- from: InternalTransaction
+  to: Transaction
+  kind: belongs_to
+  via: transactionHash
+- from: Block
+  to: Block
+  kind: belongs_to
+  via: parentHash (the chain itself)
+- from: Block
+  to: Address
+  kind: belongs_to
+  via: minerHash
+- from: SmartContract
+  to: Address
+  kind: belongs_to
+  via: addressHash
+- from: Token
+  to: Address
+  kind: belongs_to
+  via: contractAddressHash
+entry_points:
+  graphql:
+  - address(hash)
+  - addresses(hashes)
+  - block(number)
+  - transaction(hash)
+  - tokenTransfers(tokenContractAddressHash, first/last/before/after/count)
+  - tokenTransferTxs(addressHash, first/last/before/after/count)
+  - node(id)
+  subscriptions:
+  - tokenTransfers
+  rest_v2:
+  - /api/v2/stats
+  - /api/v2/blocks
+  - /api/v2/transactions/{hash}
+  - /api/v2/addresses/{hash}
+  - /api/v2/main-page/blocks
+  - /api/v2/config/backend-version

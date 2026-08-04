@@ -1,0 +1,105 @@
+generated: '2026-08-04'
+method: probed
+source: live probes of the GUNZ RPC node and GUNZScan, plus https://gunbygunz.com/documentation/
+summary: >-
+  Gunzilla makes no compliance claims and holds no published certifications that could be verified.
+  What it does conform to is a stack of open technical standards inherited from Ethereum, Avalanche
+  and Blockscout, most of which were confirmed by direct probe rather than by a docs claim.
+standards:
+- id: json-rpc-2.0
+  conforms: true
+  evidence: 'error responses carry the canonical {jsonrpc,id,error:{code,message}} shape; observed
+    code -32601 for an unknown method'
+  probe: POST https://rpc.gunzchain.io/ext/bc/2M47.../rpc
+- id: ethereum-json-rpc
+  conforms: true
+  evidence: eth_chainId, eth_blockNumber and web3_clientVersion all answer; the documentation states
+    the subnet "inherits all EVM API functionalities of an Ethereum node"
+- id: eip-155-replay-protection
+  conforms: true
+  evidence: chain ID 43419 is published and returned by eth_chainId (0xa99b), binding signatures to
+    this chain
+- id: avalanche-subnet-evm
+  conforms: true
+  evidence: chain served at /ext/bc/<blockchainID>/rpc; documentation points at
+    https://docs.avax.network/api-reference/subnet-evm-api
+- id: snowman-consensus
+  conforms: true
+  evidence: documentation states Snowman++ (Avalanche single-chain consensus)
+- id: erc-20
+  conforms: partial
+  evidence: >-
+    GUN is the native gas coin, not an ERC-20 - the documentation says so explicitly. ERC-20 token
+    contracts are indexed by the explorer (Token type in the GraphQL schema carries name, symbol,
+    decimals, totalSupply).
+- id: erc-721
+  conforms: true
+  evidence: '"The only NFT standard we use for our project is ERC-721." -
+    https://gunbygunz.com/documentation/'
+- id: graphql-june-2018
+  conforms: true
+  evidence: anonymous introspection returns a valid __schema with Relay-style Connection/Edge/PageInfo
+    types
+  probe: POST https://gunzscan.io/api/v1/graphql
+- id: relay-cursor-connections
+  conforms: true
+  evidence: PageInfo, TransactionConnection/Edge, TokenTransferConnection/Edge in the introspected SDL
+- id: graphql-over-websocket
+  conforms: partial
+  evidence: RootSubscriptionType.tokenTransfers exists; transport is Blockscout's Phoenix socket at
+    /socket/websocket (HTTP 426 Upgrade Required on plain GET), not graphql-transport-ws
+- id: rfc-9116-security-txt
+  conforms: true
+  evidence: /.well-known/security.txt served on gunzchain.io, rpc.gunzchain.io, api.gunztoken.io and
+    marketplace.gunztoken.io with Contact, Expires, Hiring and Preferred-Languages
+- id: rfc-9457-problem-details
+  conforms: false
+  evidence: four different non-RFC-9457 error envelopes across the estate; see
+    errors/gunzilla-games-error-codes.yml
+- id: json-api
+  conforms: partial
+  evidence: 'GUNZScan REST v2 validation errors use a JSON:API-flavoured errors[] array with a
+    source.pointer, but the success shapes are not JSON:API documents'
+- id: openapi
+  conforms: false
+  evidence: >-
+    No OpenAPI/Swagger document is retrievable. gunzscan.io/api-docs renders a server-side Swagger UI
+    with no downloadable spec; /swagger.json, /swagger/v1/swagger.json, /api-docs/swagger.json and
+    /openapi.json all 404. api.gunztoken.io is FastAPI-shaped (a 404 there returns
+    {"detail":"Not Found"}) so an /openapi.json likely exists behind the Cloudflare challenge, but it
+    returns 403 anonymously and was not obtained.
+- id: asyncapi
+  conforms: false
+  evidence: an event surface exists (GraphQL subscription over WebSocket) but no AsyncAPI document is
+    published
+- id: oauth2
+  conforms: false
+  evidence: no OAuth endpoints; /.well-known/oauth-authorization-server 404 on every host
+- id: openid-connect
+  conforms: false
+  evidence: /.well-known/openid-configuration 404 on every host
+- id: cors
+  conforms: true
+  evidence: 'access-control-allow-origin: * on the RPC node, GUNZScan REST v2 and GUNZScan GraphQL'
+compliance_claims:
+- claim: Tokenomics audit by Hacken
+  source: https://gunbygunz.com/documentation/
+  reference: https://hacken.io/audits/gunz/sca-gunzilla-gunz-mar2025/
+  verified: false
+  note: >-
+    Gunzilla's documentation states "GUNZ's tokenomics audit was conducted by HACKEN" and links the
+    report. The Hacken page returned HTTP 403 to our fetch, so the report contents could not be
+    independently confirmed. Recorded as an unverified provider claim - deliberately NOT wired as a
+    Compliance pointer.
+- claim: Avalanche Subnet-EVM audit
+  source: https://gunbygunz.com/documentation/
+  verified: false
+  note: an upstream audit of Avalanche's code, not of Gunzilla's.
+- claim: Fireblocks institutional digital-asset custody support (incl. validator NFT support)
+  source: https://gunbygunz.com/documentation/
+  verified: false
+certifications: []
+notes: >-
+  No SOC 2, ISO 27001, PCI DSS, HIPAA, FedRAMP or GDPR posture is published, and no trust centre
+  exists - probe-security-programs.py returned trust=none across trust.*, security.* and
+  /trust|/security|/compliance on every domain.

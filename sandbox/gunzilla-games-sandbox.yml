@@ -1,0 +1,72 @@
+generated: '2026-08-04'
+method: probed
+source: https://gunbygunz.com/documentation/
+summary: >-
+  Gunzilla operates a GUNZ testnet alongside mainnet, but publishes no testing documentation, no
+  faucet URL of its own, and no test-vs-live key conventions (there are no keys). Test funding is a
+  human process: the documentation asks developers to send wallet addresses to the team, who fund
+  them. The testnet chain ID was confirmed by probe, not by a docs page.
+test_vs_live:
+  mechanism: separate chain ID / separate RPC endpoint
+  key_prefixes: null
+  note: >-
+    There are no API keys on any Gunzilla surface, so there is no test-key/live-key separation. A
+    client targets test or live purely by which RPC URL and chain ID it signs for. EIP-155 makes this
+    safe - a transaction signed for chain 49321 is not valid on chain 43419 and vice versa.
+environments:
+- name: mainnet
+  chain_name: GUNZ
+  chain_id: 43419
+  chain_id_hex: '0xa99b'
+  rpc:
+  - https://rpc.gunzchain.io/ext/bc/2M47TxWHGnhNtq6pM5zPXdATBtuqubxn5EPFgFmEawCQr9WFML/rpc
+  - https://subnets.avax.network/gunzilla/mainnet/rpc
+  explorer: https://gunzscan.io
+  gas_coin: GUN
+  decimals: 18
+  blockchain_id: 2M47TxWHGnhNtq6pM5zPXdATBtuqubxn5EPFgFmEawCQr9WFML
+  subnet_id: 2MbQjnTg3yxEtZBfnamboi7K9AajwNq7WExiwReBQSBtwbBVer
+  vm_id: nZiR8U7nEv51M7THczAzjXPNKdjFP75Ci4HxLevo9duYiLAHn
+  verified: 'eth_chainId -> 0xa99b'
+  source: https://gunbygunz.com/documentation/
+- name: testnet
+  chain_id: 49321
+  chain_id_hex: '0xc0a9'
+  rpc:
+  - https://subnets.avax.network/gunzilla/testnet/rpc
+  gas_coin: GUN
+  decimals: 18
+  verified: 'eth_chainId -> 0xc0a9 (probed 2026-08-04)'
+  note: >-
+    The testnet is NOT listed on Gunzilla's own documentation page, which covers mainnet only. The
+    endpoint above is the Avalanche-hosted sibling of the mainnet URL Gunzilla does publish, and it
+    answers with chain ID 49321, matching the GUNZ testnet registered on public chain registries.
+test_funding:
+  self_service_faucet: null
+  mechanism: request funding from the Gunzilla team
+  quote: >-
+    "If you need native coins to cover gas fees, kindly provide us with your wallet addresses, and we
+    will fund them for you."
+  source: https://gunbygunz.com/documentation/
+  channel: https://gunbygunz.com/develop/ (application form) or the GUNZ Discord
+magic_test_values: []
+test_clocks: false
+fixtures: null
+tooling:
+  wallet: MetaMask or any EVM wallet, by adding GUNZ as a custom network
+  quote: >-
+    "To quickly understand how the subnet is similar to EVM chains, you can manually interact with
+    our subnet using MetaMask or a similar tool. To do this, add our chain as a custom network to
+    your MetaMask."
+  libraries: web3.js, ethers.js and standard Ethereum libraries (per the documentation)
+  postman: >-
+    Gunzilla points at the third-party Avalanche Postman collection
+    (https://github.com/ava-labs/avalanche-postman-collection/) rather than publishing one of its own.
+constraints:
+- Contract deployment is permissioned on both environments - an unapproved address cannot deploy even
+  with sufficient gas.
+- Validator nodes are restricted to approved partners and Ava Labs nodes.
+gaps:
+- No published faucet, no self-service test funding, no documented testnet at all on Gunzilla's own
+  site.
+- No sandbox for the gated marketplace/minting API at api.gunztoken.io.

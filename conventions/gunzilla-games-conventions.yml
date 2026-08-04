@@ -1,0 +1,155 @@
+generated: '2026-08-04'
+method: searched
+source: https://gunbygunz.com/documentation/
+supporting_probes:
+- https://rpc.gunzchain.io/ext/bc/2M47TxWHGnhNtq6pM5zPXdATBtuqubxn5EPFgFmEawCQr9WFML/rpc
+- https://gunzscan.io/api/v2/blocks
+- https://gunzscan.io/api/v1/graphql
+summary: >-
+  Gunzilla's public API surface follows two well-known conventions rather than a house style: the
+  Ethereum JSON-RPC 2.0 contract on the GUNZ chain node, and the Blockscout explorer conventions on
+  GUNZScan. Nothing here is a Gunzilla invention, which is a strength for agent consumption - any
+  EVM-literate client already knows the shapes - and a weakness for discoverability, because
+  Gunzilla publishes no reference of its own beyond a single documentation page.
+
+authentication:
+  style: none for reads; ECDSA transaction signature for writes; IP allow-list for RPC quota
+  detail: see authentication/gunzilla-games-authentication.yml
+
+idempotency:
+  supported: true
+  mechanism: evm-account-nonce
+  scope: per sending address, per chain
+  header: null
+  description: >-
+    Write submission on GUNZ is idempotent by protocol construction rather than by an
+    Idempotency-Key header. Every transaction carries a monotonically increasing per-account nonce
+    and is signed over chain ID 43419 (EIP-155). Re-broadcasting an identical signed raw transaction
+    via eth_sendRawTransaction is a safe no-op: once mined, the node rejects it as a duplicate/known
+    transaction, and a transaction reusing an already-consumed nonce is rejected outright. This is
+    the retry-safety contract an agent needs - a client that loses the response to a submission can
+    re-send the same signed bytes without risk of double-execution, then confirm with
+    eth_getTransactionByHash.
+  provider_evidence: >-
+    "Transaction failure conditions may include the following: insufficient balance, a lower nonce,
+    or a gas price that is below the network's requirements." - https://gunbygunz.com/documentation/
+  read_side: >-
+    All GUNZScan and RPC read operations are GET/POST-shaped pure reads and are naturally idempotent.
+  caveat: >-
+    There is no application-level Idempotency-Key on any Gunzilla-operated HTTP API, and the gated
+    gunztoken.io minting/marketplace API publishes no idempotency contract at all.
+
+pagination:
+- surface: GUNZScan REST v2
+  style: cursor (opaque continuation object)
+  request: 'query parameters echoed back from the previous response''s next_page_params object'
+  response_fields:
+  - items
+  - next_page_params
+  example_cursor: '{"block_number": 22345537, "items_count": 50}'
+  page_size: 50 (server-controlled)
+  end_of_list: next_page_params is null
+- surface: GUNZScan GraphQL
+  style: Relay cursor connections
+  arguments:
+  - first
+  - last
+  - before
+  - after
+  - count
+  response_fields:
+  - edges.node
+  - edges.cursor
+  - pageInfo.hasNextPage
+  - pageInfo.hasPreviousPage
+  - pageInfo.startCursor
+  - pageInfo.endCursor
+  evidence: graphql/gunzilla-games-gunzscan.graphql (PageInfo, *Connection, *Edge types)
+- surface: GUNZScan Etherscan-compatible API
+  style: page/offset
+  parameters:
+  - page
+  - offset
+- surface: GUNZ JSON-RPC
+  style: none
+  note: block/log range windows are the only chunking mechanism (eth_getLogs fromBlock/toBlock)
+
+field_selection:
+  expansion: null
+  sparse_fields: GraphQL only - the client selects the field set; REST v2 returns fixed shapes.
+
+metadata:
+  supported: false
+  note: no user-attachable metadata on any surface; on-chain data only.
+
+request_tracing:
+  header: x-request-id
+  surfaces:
+  - GUNZScan REST v2
+  - GUNZScan GraphQL
+  example: 'x-request-id: GMiwFYNXEVwi1KyrdGID'
+  rpc_equivalent:
+    header: node-id
+    example: 'node-id: NodeID-LAFqoYs5nSveR6m2Ek8k41YpazmoF8ZVY'
+    note: identifies the serving validator node rather than the request.
+
+versioning:
+  scheme: uri-path
+  surfaces:
+  - path: /api/v2/*
+    label: Blockscout REST v2 (current)
+  - path: /api/v1/graphql
+    label: GraphQL v1
+  - path: /api?module=&action=
+    label: Etherscan-compatible legacy API (unversioned)
+  chain_versioning: >-
+    The chain itself is versioned by Subnet-EVM client releases (web3_clientVersion reported v1.14.2
+    at probe time); the JSON-RPC method surface is the Ethereum JSON-RPC contract, versioned upstream.
+  detail: see lifecycle/gunzilla-games-lifecycle.yml
+
+error_envelope:
+  detail: see errors/gunzilla-games-error-codes.yml
+  shapes:
+  - surface: GUNZ JSON-RPC
+    format: JSON-RPC 2.0 error object
+    example: '{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"the method eth_bogusMethod does not exist/is not available"}}'
+  - surface: GUNZScan REST v2
+    format: errors[] with JSON-Pointer source (JSON:API flavored)
+    example: '{"errors":[{"title":"Invalid value","source":{"pointer":"/address_hash_param"},"detail":"Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/"}]}'
+  - surface: GUNZScan REST v2 (not found)
+    format: flat message object
+    example: '{"message":"Not found"}'
+  - surface: GUNZScan Etherscan-compatible API
+    format: status/message/result triple, HTTP 200 regardless
+    example: '{"message":"Invalid address hash","result":null,"status":"0"}'
+  - surface: GUNZScan GraphQL
+    format: GraphQL errors[] with message + locations
+    example: '{"errors":[{"message":"Field __schema is too complex: complexity is 181 and maximum is 100","locations":[{"line":1,"column":26}]}]}'
+  rfc9457: false
+
+rate_limit_signaling:
+  headers:
+  - x-ratelimit-limit
+  - x-ratelimit-remaining
+  - x-ratelimit-reset
+  surfaces:
+  - GUNZScan REST v2
+  - GUNZScan GraphQL
+  detail: see rate-limits/gunzilla-games-rate-limits.yml
+
+cors:
+  access_control_allow_origin: '*'
+  note: every public read surface is browser-callable cross-origin.
+
+content_negotiation:
+  request: application/json
+  response: application/json
+  encoding: numbers are returned as 0x-prefixed hex strings on JSON-RPC and as decimal strings on
+    GUNZScan REST v2 - a common cross-surface trap.
+
+cross_links:
+  errors: errors/gunzilla-games-error-codes.yml
+  lifecycle: lifecycle/gunzilla-games-lifecycle.yml
+  authentication: authentication/gunzilla-games-authentication.yml
+  rate_limits: rate-limits/gunzilla-games-rate-limits.yml
+  data_model: data-model/gunzilla-games-data-model.yml

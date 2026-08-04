@@ -1,0 +1,76 @@
+generated: '2026-08-04'
+method: probed
+source: https://gunzscan.io/api/v1/graphql (introspection) + https://gunzscan.io/socket/websocket
+spec_type: none
+summary: >-
+  Gunzilla publishes no AsyncAPI document and no webhook catalog - there is no callback URL you can
+  register anywhere in the estate. There IS a real, anonymous, push-based event surface: the GUNZScan
+  GraphQL schema declares a RootSubscriptionType with a tokenTransfers subscription, delivered over
+  Blockscout's Phoenix WebSocket. Plus the chain node itself carries the standard EVM log/filter
+  polling surface. Both are recorded here as the provider's event surface; neither is described by a
+  machine-readable event spec.
+asyncapi_document: null
+webhooks: []
+event_surfaces:
+- id: gunzscan-graphql-subscription
+  kind: graphql-subscription
+  transport: websocket
+  endpoint: wss://gunzscan.io/socket/websocket
+  protocol: Phoenix channels (Blockscout), vsn=2.0.0
+  auth: none
+  verified:
+    probe: GET https://gunzscan.io/socket/websocket?vsn=2.0.0
+    http_status: 426
+    meaning: Upgrade Required - the endpoint is a live WebSocket, not an HTTP resource
+  channels:
+  - name: tokenTransfers
+    operation: subscribe
+    root_type: RootSubscriptionType
+    payload: TokenTransfer
+    payload_fields:
+    - transactionHash
+    - blockNumber
+    - logIndex
+    - fromAddressHash
+    - toAddressHash
+    - tokenContractAddressHash
+    - amount
+    - amounts
+    - tokenIds
+    - token
+    - transaction
+    schema_source: graphql/gunzilla-games-gunzscan.graphql
+    note: >-
+      The only subscription the schema exposes. There is no block, transaction or address
+      subscription in the GraphQL surface, so an agent wanting new-block events must poll.
+- id: evm-log-filters
+  kind: polling-filter
+  transport: json-rpc
+  endpoint: https://rpc.gunzchain.io/ext/bc/2M47TxWHGnhNtq6pM5zPXdATBtuqubxn5EPFgFmEawCQr9WFML/rpc
+  auth: none
+  methods:
+  - eth_getLogs
+  - eth_newFilter
+  - eth_newBlockFilter
+  - eth_getFilterChanges
+  - eth_getTransactionByHash
+  note: >-
+    Gunzilla's documentation names this as the supported deposit-tracking pattern rather than
+    offering push notifications.
+  quote: >-
+    "GUNZ Chain allows deposit scanning using its public node API. Similar to Ethereum, a common
+    approach involves using a full node to scan the blockchain for specific address transactions. The
+    getTransactionByHash and getLogs RPC calls can be used to track deposits."
+  source: https://gunbygunz.com/documentation/
+  websocket_variant:
+    probed: false
+    note: >-
+      A wss:// variant of the subnet RPC (eth_subscribe / newHeads) is the usual Subnet-EVM
+      companion but is not published by Gunzilla and was not confirmed.
+gaps:
+- No AsyncAPI document for either surface.
+- No webhooks anywhere - an integrator cannot receive an HTTP callback for a deposit, a mint or a
+  marketplace event, only poll or hold a socket open.
+- Only one subscription channel exists (token transfers); block and transaction events are
+  poll-only.
+- The WebSocket endpoint is undocumented on any Gunzilla page - it was found by probing the explorer.

@@ -1,23 +1,158 @@
 aid: gunzilla-games
 name: Gunzilla Games
-description: 'Gunzilla Games is a company surfaced via the API Evangelist harvest backlog (source: secondary-market)
-  and added to the network as a stub for full-pipeline profiling.'
+description: 'Gunzilla Games is a AAA game developer founded in 2020 with studios in
+  Frankfurt, Kyiv and London, best known for the cyberpunk battle-royale shooter Off
+  The Grid. Alongside the game the studio operates GUNZ, a permissioned Avalanche L1
+  (subnet) blockchain purpose-built for game developers, with GUN as its native gas
+  coin. The public technical surface is EVM-shaped: a public Ethereum/Subnet-EVM JSON-RPC
+  node at rpc.gunzchain.io (chain ID 43419), a mirrored Avalanche-hosted RPC, and the
+  GUNZScan block explorer at gunzscan.io, which exposes a Blockscout REST v2 API, an
+  Etherscan-compatible module/action API, an open GraphQL endpoint and a WebSocket
+  subscription surface. A gated marketplace/minting API sits behind api.gunztoken.io.'
+image: https://storage.gunbygunz.com/gunz_symbol_320x320.png
 url: https://raw.githubusercontent.com/api-evangelist/gunzilla-games/refs/heads/main/apis.yml
 x-type: company
 x-source: harvest:secondary-market
-x-tier: stub
-x-tier-reason: harvest
 specificationVersion: '0.20'
 created: '2026-08-04'
 modified: '2026-08-04'
 tags:
 - Company
-apis: []
+- Gaming
+- Blockchain
+- Web3
+- EVM
+- Avalanche
+- JSON-RPC
+- GraphQL
+- Block Explorer
+- NFT
+- Video Games
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+apis:
+- name: GUNZ Chain JSON-RPC API
+  description: 'The public Ethereum-compatible JSON-RPC endpoint for the GUNZ L1 chain,
+    an Avalanche subnet running Subnet-EVM. It inherits the full EVM API surface of
+    an Ethereum node (eth_*, net_*, web3_*), plus the Avalanche subnet-evm extensions.
+    Chain ID 43419, native gas coin GUN (18 decimals), Snowman++ consensus, ~1-2 second
+    blocks with finality in 2-3 blocks. The chain is permissioned for contract deployment
+    and validation; the RPC itself answers anonymous reads, with IP allow-listing offered
+    to partners to avoid rate limits.'
+  humanURL: https://gunbygunz.com/documentation/
+  baseURL: https://rpc.gunzchain.io/ext/bc/2M47TxWHGnhNtq6pM5zPXdATBtuqubxn5EPFgFmEawCQr9WFML/rpc
+  tags:
+  - Blockchain
+  - EVM
+  - JSON-RPC
+  - Avalanche
+  - Web3
+  properties:
+  - type: Documentation
+    url: https://gunbygunz.com/documentation/
+  - type: APIReference
+    name: Avalanche Subnet-EVM API reference (the API surface GUNZ inherits)
+    url: https://docs.avax.network/api-reference/subnet-evm-api
+  - type: Mirror
+    name: Avalanche-hosted GUNZ mainnet RPC
+    url: https://subnets.avax.network/gunzilla/mainnet/rpc
+  - type: Chainlist
+    url: https://chainlist.org/chain/43419
+- name: GUNZScan Explorer API
+  description: 'GUNZScan is the GUNZ chain block explorer, referenced from Gunzilla''s
+    own chain documentation as the official explorer. It runs Blockscout and exposes
+    three anonymous, machine-readable read surfaces: a REST v2 JSON API under /api/v2
+    (stats, blocks, transactions, addresses, tokens, smart contracts), an Etherscan-compatible
+    module/action API under /api documented with a Swagger UI at /api-docs, and a GraphQL
+    endpoint at /api/v1/graphql whose introspection is open. A Phoenix WebSocket at
+    /socket/websocket carries the GraphQL token-transfer subscription.'
+  humanURL: https://gunzscan.io/api-docs
+  baseURL: https://gunzscan.io/api
+  tags:
+  - Block Explorer
+  - Blockchain
+  - GraphQL
+  - REST
+  - Web3
+  properties:
+  - type: APIReference
+    url: https://gunzscan.io/api-docs
+  - type: GraphQL
+    url: graphql/gunzilla-games-gunzscan.graphql
+  - type: Console
+    name: GraphiQL console
+    url: https://gunzscan.io/graphiql
+  - type: DataModel
+    url: data-model/gunzilla-games-data-model.yml
 common:
 - type: Website
+  url: https://gunzillagames.com/en/
+- type: Profile
+  name: Hiive secondary-market listing
   url: https://www.hiive.com/securities/gunzilla-games-stock
+- type: DeveloperPortal
+  url: https://gunbygunz.com/develop/
+- type: Documentation
+  url: https://gunbygunz.com/documentation/
+- type: APIReference
+  url: https://gunzscan.io/api-docs
+- type: Blog
+  url: https://gameoffthegrid.com/blog/
+- type: Support
+  name: GUNZ Discord
+  url: https://discord.com/invite/gunbygunz
+- type: PrivacyPolicy
+  url: https://gunbygunz.com/privacy/
+- type: TermsOfService
+  url: https://gunbygunz.com/gunz-terms/
+- type: WellKnown
+  url: well-known/gunzilla-games-well-known.yml
+- type: SecurityTxt
+  url: well-known/gunzilla-games-security.txt
+- type: Security
+  name: Security contact (RFC 9116 security.txt)
+  url: security/gunzilla-games-vulnerability-disclosure.yml
+- type: VulnerabilityDisclosure
+  url: security/gunzilla-games-vulnerability-disclosure.yml
+- type: DomainSecurity
+  url: security/gunzilla-games-domain-security.yml
+- type: Authentication
+  url: authentication/gunzilla-games-authentication.yml
+- type: Conventions
+  url: conventions/gunzilla-games-conventions.yml
+- type: Idempotency
+  name: Transaction idempotency (EVM nonce replay protection)
+  url: conventions/gunzilla-games-conventions.yml
+- type: ErrorCatalog
+  url: errors/gunzilla-games-error-codes.yml
+- type: Lifecycle
+  url: lifecycle/gunzilla-games-lifecycle.yml
+- type: Conformance
+  url: conformance/gunzilla-games-conformance.yml
+- type: DataModel
+  url: data-model/gunzilla-games-data-model.yml
+- type: RateLimits
+  url: rate-limits/gunzilla-games-rate-limits.yml
+- type: Sandbox
+  url: sandbox/gunzilla-games-sandbox.yml
+- type: Packages
+  url: packages/gunzilla-games-packages.yml
+- type: GraphQL
+  url: graphql/gunzilla-games-gunzscan.graphql
+- type: Webhooks
+  name: GUNZScan event subscriptions (GraphQL over WebSocket)
+  url: asyncapi/gunzilla-games-gunzscan-events.yml
+- type: MCPServer
+  url: mcp/gunzilla-games-mcp.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: LLMsTxt
+  url: llms/gunzilla-games-llms.txt
+x-enrichment:
+  date: '2026-08-04'
+  status: enriched
+  artifacts_added: 21
+  pass: local-v1

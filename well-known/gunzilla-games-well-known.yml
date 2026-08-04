@@ -1,0 +1,104 @@
+generated: '2026-08-04'
+method: probed
+source: live GET of /.well-known/* on every Gunzilla / GUNZ host in apis.yml
+notes: >-
+  Gunzilla publishes an RFC 9116 security.txt on its chain infrastructure hosts
+  (gunzchain.io, rpc.gunzchain.io, api.gunztoken.io, marketplace.gunztoken.io) but not on the
+  corporate site, the chain marketing site, the game site, or the block explorer. Two variants are
+  served: the gunzchain.io pair carry Expires 2050-01-01, the gunztoken.io pair carry Expires
+  2030-02-01; all four name the same security contact. gunzillagames.com and marketplace.gunztoken.io
+  answer HTTP 200 with an HTML shell for every /.well-known/* path (SPA / WAF catch-all) and were
+  rejected as false positives — only text/plain and application/json bodies were accepted.
+hosts:
+- host: https://rpc.gunzchain.io
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    file: gunzilla-games-security.txt
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/oauth-authorization-server
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/ai-plugin.json
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+- host: https://gunzchain.io
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    note: identical body to rpc.gunzchain.io
+- host: https://api.gunztoken.io
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    note: 'same contact, different expiry: Expires 2030-02-01T12:31:00Z'
+  - path: /.well-known/agent-card.json
+    status: 404
+    content_type: application/json
+  - path: /.well-known/agent.json
+    status: 404
+    content_type: application/json
+- host: https://marketplace.gunztoken.io
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    content_type: text/plain; charset=utf-8
+    note: 'same contact, Expires 2030-02-01T12:31:00Z'
+  - path: /.well-known/agent-card.json
+    status: 200
+    content_type: text/html
+    accepted: false
+    reason: HTML body from WAF/SPA catch-all, not an AgentCard
+- host: https://gunzscan.io
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+- host: https://gunbygunz.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/ai-plugin.json
+    status: 404
+- host: https://gunz.gg
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+- host: https://gameoffthegrid.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+- host: https://gunzillagames.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 200
+    content_type: text/html
+    accepted: false
+    reason: HTML body from WAF/SPA catch-all - every /.well-known/* path returns 200 text/html

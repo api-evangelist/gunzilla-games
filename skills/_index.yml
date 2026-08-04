@@ -1,0 +1,44 @@
+generated: '2026-08-04'
+method: generated
+source: >-
+  Grounded in live-verified JSON-RPC methods, the introspected GUNZScan GraphQL schema
+  (graphql/gunzilla-games-gunzscan.graphql) and probed REST v2 endpoints. Gunzilla publishes no
+  OpenAPI and no AGENTS.md / skill files of its own - a search of its developer surfaces found none.
+skills:
+- file: gunzilla-games-read-gunz-chain-state.md
+  name: Read GUNZ chain state
+  api: GUNZ Chain JSON-RPC API
+  operations:
+  - eth_chainId
+  - web3_clientVersion
+  - eth_blockNumber
+  - eth_getBalance
+  - eth_getTransactionByHash
+  - eth_getLogs
+- file: gunzilla-games-query-gunzscan-explorer.md
+  name: Query and stream the GUNZScan explorer
+  api: GUNZScan Explorer API
+  operations:
+  - RootQueryType.address
+  - RootQueryType.addresses
+  - RootQueryType.block
+  - RootQueryType.transaction
+  - RootQueryType.tokenTransfers
+  - RootQueryType.tokenTransferTxs
+  - RootSubscriptionType.tokenTransfers
+  - GET /api/v2/stats
+  - GET /api/v2/blocks
+  - GET /api/v2/transactions/{hash}
+  - GET /api/v2/addresses/{hash}
+- file: gunzilla-games-submit-gunz-transaction.md
+  name: Submit a GUNZ transaction safely
+  api: GUNZ Chain JSON-RPC API
+  write: true
+  operations:
+  - eth_chainId
+  - eth_getTransactionCount
+  - eth_gasPrice
+  - eth_estimateGas
+  - eth_sendRawTransaction
+  - eth_getTransactionByHash
+  - eth_getTransactionReceipt

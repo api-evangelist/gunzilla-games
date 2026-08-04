@@ -1,0 +1,71 @@
+generated: '2026-08-04'
+method: searched
+source: npm, PyPI and the Gunzilla / GUNZ developer pages
+summary: >-
+  Gunzilla publishes no first-party client library on any public package registry. The GUNZ
+  documentation explicitly tells developers to use the generic Ethereum tooling instead. Mobile
+  wallet SDKs for iOS and Android are advertised on the developer page but are not publicly
+  distributed - they are obtained by applying to launch on GUNZ. The only publicly downloadable
+  first-party artefacts are the two consumer wallet apps in the mobile stores.
+packages: []
+registries_searched:
+- registry: npm
+  query: gunz, gunzilla, gunzchain, gunztoken
+  result: no first-party package
+- registry: PyPI
+  query: gunz, gunzilla, gunzchain
+  result: 404 on all
+- registry: Maven Central
+  result: no first-party package
+- registry: NuGet
+  result: no first-party package
+- registry: pkg.go.dev
+  result: no first-party package
+- registry: RubyGems
+  result: no first-party package
+- registry: Packagist
+  result: no first-party package
+- registry: crates.io
+  result: no first-party package
+- registry: GitHub
+  query: 'orgs gunzilla, gunzillagames, gunzchain, gunz-chain'
+  result: 404 on all - no public GitHub organization
+  provider_confirmation: '"the project code is not publicly available on GitHub" -
+    https://gunbygunz.com/documentation/'
+recommended_third_party:
+  note: >-
+    Gunzilla names these as the supported integration path rather than shipping an SDK. They are
+    third-party open-source libraries and are NOT marked official.
+  libraries:
+  - name: ethers.js
+    language: javascript
+    official: false
+  - name: web3.js
+    language: javascript
+    official: false
+  source: https://gunbygunz.com/documentation/
+first_party_applications:
+- name: GUNZ Wallet (iOS)
+  kind: mobile-app
+  url: https://apps.apple.com/us/app/gunz-wallet/id6445798887
+  official: true
+- name: GUNZ Wallet (Android)
+  kind: mobile-app
+  bundle_id: com.gunzillagames.walletapp
+  url: https://play.google.com/store/apps/details?id=com.gunzillagames.walletapp
+  official: true
+undistributed_sdks:
+- name: GUNZ Mobile Wallet SDK (iOS)
+  status: advertised, not publicly distributed
+  source: https://gunbygunz.com/develop/
+- name: GUNZ Mobile Wallet SDK (Android)
+  status: advertised, not publicly distributed
+  source: https://gunbygunz.com/develop/
+  quote: >-
+    "Use the power of the GUNZ ecosystem with iOS and Android's Mobile SDKs to give your users access
+    to their tokens and NFTs safely and securely."
+gaps:
+- No public source repository, so no SDK, no issue tracker, and no way for a developer to read the
+  client code they are asked to integrate.
+- The minting engine, marketplace and scanner products on the developer page are described as APIs
+  with no published reference and no client library.

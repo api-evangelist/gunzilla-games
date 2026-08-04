@@ -1,0 +1,89 @@
+# Gunzilla Games
+
+<!--
+generated: 2026-08-04
+method: generated
+source: apis.yml + repo artifacts. Gunzilla publishes no /llms.txt - probed gunzillagames.com,
+        gunbygunz.com, gunz.gg, gameoffthegrid.com, gunzscan.io and rpc.gunzchain.io (404 or
+        HTML catch-all on all).
+-->
+
+> Gunzilla Games is a AAA game studio (founded 2020; Frankfurt, Kyiv, London) behind the cyberpunk
+> battle-royale shooter Off The Grid. It also operates GUNZ, a permissioned Avalanche L1 subnet built
+> for game developers, with GUN as its native gas coin. The public API surface is entirely EVM-shaped:
+> an Ethereum/Subnet-EVM JSON-RPC node (chain ID 43419) and the GUNZScan block explorer, which serves
+> a REST v2 API, an Etherscan-compatible API, an open GraphQL endpoint and a WebSocket subscription.
+> Everything public is anonymous and read-only except transaction broadcast, which is authenticated by
+> the caller's own wallet signature. There are no API keys, no OAuth, no OpenAPI, no SDKs, no public
+> GitHub, no status page and no webhooks.
+
+## APIs
+
+- [GUNZ Chain JSON-RPC API](https://gunbygunz.com/documentation/): Ethereum-compatible JSON-RPC on
+  the GUNZ L1 (Avalanche subnet, Subnet-EVM). Chain ID 43419 (0xa99b), gas coin GUN, 18 decimals,
+  ~1-2s blocks, finality in 2-3 blocks. Endpoint:
+  `https://rpc.gunzchain.io/ext/bc/2M47TxWHGnhNtq6pM5zPXdATBtuqubxn5EPFgFmEawCQr9WFML/rpc`;
+  mirror `https://subnets.avax.network/gunzilla/mainnet/rpc`. Testnet is chain 49321 at
+  `https://subnets.avax.network/gunzilla/testnet/rpc`.
+- [GUNZScan Explorer API](https://gunzscan.io/api-docs): the GUNZ block explorer (Blockscout). Three
+  anonymous surfaces on one host - REST v2 at `/api/v2`, Etherscan-compatible at
+  `/api?module=&action=`, GraphQL at `/api/v1/graphql` (introspection open, complexity ceiling 100).
+- api.gunztoken.io / marketplace.gunztoken.io: the minting-engine and marketplace APIs advertised on
+  the developer page. Gated behind a Cloudflare challenge (HTTP 403) with no public documentation.
+
+## Specs and artifacts
+
+- [GUNZScan GraphQL schema](graphql/gunzilla-games-gunzscan.graphql): SDL reconstructed from live
+  anonymous introspection.
+- [Data model](data-model/gunzilla-games-data-model.yml): Address, Block, Transaction,
+  InternalTransaction, Token, TokenTransfer, SmartContract and their relationships.
+- [API conventions](conventions/gunzilla-games-conventions.yml): pagination, tracing, versioning,
+  error envelopes, and the nonce-based idempotency contract.
+- [Error catalog](errors/gunzilla-games-error-codes.yml): JSON-RPC codes plus the four different
+  error envelopes GUNZScan uses.
+- [Rate limits](rate-limits/gunzilla-games-rate-limits.yml): REST 3000, GraphQL 500, signalled by
+  `x-ratelimit-*`. The RPC node signals nothing.
+- [Authentication](authentication/gunzilla-games-authentication.yml): none for reads, wallet
+  signature for writes, IP allow-list for RPC quota, out-of-band approval for deployment.
+- [Event surface](asyncapi/gunzilla-games-gunzscan-events.yml): one GraphQL subscription
+  (`tokenTransfers`) over `wss://gunzscan.io/socket/websocket`. No webhooks, no AsyncAPI.
+- [Sandbox](sandbox/gunzilla-games-sandbox.yml): testnet chain 49321; no self-service faucet - the
+  team funds addresses on request.
+- [Conformance](conformance/gunzilla-games-conformance.yml): JSON-RPC 2.0, Ethereum JSON-RPC,
+  EIP-155, Subnet-EVM, ERC-721, GraphQL/Relay, RFC 9116. Not RFC 9457, not OpenAPI, not OAuth.
+- [Lifecycle](lifecycle/gunzilla-games-lifecycle.yml): no status page, no deprecation policy, no
+  SLA, no changelog.
+- [Packages](packages/gunzilla-games-packages.yml): no first-party libraries on any registry; use
+  ethers.js / web3.js.
+- [Agent skills](skills/_index.yml): read chain state, query and stream GUNZScan, submit a
+  transaction safely.
+- [Candidate MCP tools](mcp/gunzilla-games-mcp.yml): derived, not published by Gunzilla.
+
+## Docs
+
+- [GUNZ L1 mainnet documentation](https://gunbygunz.com/documentation/): the single technical page -
+  chain identifiers, RPC URLs, consensus, fees, deposit scanning, address rules.
+- [Develop with GUNZ](https://gunbygunz.com/develop/): minting engine, scanner, wallet SDKs,
+  marketplace, and the application form for launching on GUNZ.
+- [Avalanche Subnet-EVM API reference](https://docs.avax.network/api-reference/subnet-evm-api): the
+  upstream method surface GUNZ inherits.
+- [GraphiQL console](https://gunzscan.io/graphiql)
+- [Chainlist entry](https://chainlist.org/chain/43419)
+
+## Company
+
+- [Gunzilla Games](https://gunzillagames.com/en/)
+- [Off The Grid](https://gameoffthegrid.com) - [blog](https://gameoffthegrid.com/blog/)
+- [GUNZ Discord](https://discord.com/invite/gunbygunz)
+- [Privacy policy](https://gunbygunz.com/privacy/) - [Terms](https://gunbygunz.com/gunz-terms/)
+- Security contact: security@gunzillagames.com (RFC 9116 security.txt, served on the chain hosts)
+
+## Notes for agents
+
+- Always call `eth_chainId` and require `0xa99b` before acting on GUNZ mainnet. `0xc0a9` is testnet.
+- Numbers are hex on JSON-RPC and decimal strings on GUNZScan REST v2. Convert deliberately.
+- JSON-RPC and the Etherscan-compatible API both return HTTP 200 on failure. Branch on the body.
+- Idempotency is the EVM account nonce. Re-broadcast identical signed bytes; never re-sign with a new
+  nonce to "retry".
+- Contract deployment and validator participation are permissioned and require Gunzilla's approval.
+- Never hold a user's signing key.
